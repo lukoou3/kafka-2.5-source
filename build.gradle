@@ -22,6 +22,7 @@ buildscript {
     mavenCentral()
     jcenter()
     maven {
+      url "http://maven.aliyun.com/nexus/content/repositories/central/"
       url "https://plugins.gradle.org/m2/"
     }
   }
@@ -745,6 +746,8 @@ project(':core') {
     compile libs.scalaReflect
     compile libs.scalaLogging
     compile libs.slf4jApi
+    compile libs.slf4jlog4j
+    compile libs.log4j
     compile(libs.zookeeper) {
       exclude module: 'slf4j-log4j12'
       exclude module: 'log4j'
