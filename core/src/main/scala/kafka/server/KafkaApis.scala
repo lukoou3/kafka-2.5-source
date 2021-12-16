@@ -87,6 +87,16 @@ import scala.util.{Failure, Success, Try}
 
 /**
  * Logic to handle the various Kafka requests
+ *
+ * KafkaApisKafkaApis负责具体的业务逻辑，它主要和Producer、Consumer、Broker Server交互，搞清楚这些交互就彻底知道了Broker Server的所有行为。
+ *
+ * KafkaApis主要依赖以下四个组件来完成具体的业务逻辑：
+ *    LogManager提供针对Kafka的Topic日志的读取和写入功能。
+ *    ReplicaManager提供针对Topic的分区副本数据的同步功能。
+ *    OffsetManager提供针对提交至Kafka的偏移量的管理功能。
+ *    KafkaScheduler为其他模块提供定时任务的调度和管理功能。
+ *
+ * 我们可以先分析以上四个模块的具体实现，然后针对不同类型的Request来分析KafkaApis内部的具体实现逻辑。
  */
 class KafkaApis(val requestChannel: RequestChannel,
                 val replicaManager: ReplicaManager,

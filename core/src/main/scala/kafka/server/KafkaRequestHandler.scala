@@ -31,6 +31,7 @@ import scala.collection.mutable
 import scala.collection.JavaConverters._
 
 /**
+ * 一个线程, 不停地在处理请求, 通过KafkaApis处理请求, apis: KafkaApis就是dataPlaneRequestProcessor
  * A thread that answers kafka requests.
  */
 class KafkaRequestHandler(id: Int,
@@ -52,6 +53,7 @@ class KafkaRequestHandler(id: Int,
       // time should be discounted by # threads.
       val startSelectTime = time.nanoseconds
 
+      // 从requestQueue获取request, 调用apis处理request
       val req = requestChannel.receiveRequest(300)
       val endTime = time.nanoseconds
       val idleTime = endTime - startSelectTime
@@ -67,6 +69,7 @@ class KafkaRequestHandler(id: Int,
           try {
             request.requestDequeueTimeNanos = endTime
             trace(s"Kafka request handler $id on broker $brokerId handling request $request")
+            // 处理请求的逻辑
             apis.handle(request)
           } catch {
             case e: FatalExitError =>
@@ -106,7 +109,9 @@ class KafkaRequestHandlerPool(val brokerId: Int,
   private val aggregateIdleMeter = newMeter(requestHandlerAvgIdleMetricName, "percent", TimeUnit.NANOSECONDS)
 
   this.logIdent = "[" + logAndThreadNamePrefix + " Kafka Request Handler on Broker " + brokerId + "], "
+  // KafkaRequestHandler: A thread that answers kafka requests.
   val runnables = new mutable.ArrayBuffer[KafkaRequestHandler](numThreads)
+  // 创建并start处理线程
   for (i <- 0 until numThreads) {
     createHandler(i)
   }
