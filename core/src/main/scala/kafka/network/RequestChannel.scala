@@ -386,7 +386,10 @@ class RequestChannel(val queueSize: Int, val metricNamePrefix : String) extends 
     }
   }
 
-  /** Get the next request or block until specified time has elapsed */
+  /**
+   * 读取处理请求的类是[[kafka.server.KafkaRequestHandler]]
+   * Get the next request or block until specified time has elapsed
+   */
   def receiveRequest(timeout: Long): RequestChannel.BaseRequest =
     requestQueue.poll(timeout, TimeUnit.MILLISECONDS)
 

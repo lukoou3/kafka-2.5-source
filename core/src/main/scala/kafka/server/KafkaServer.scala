@@ -120,6 +120,14 @@ object KafkaServer {
 /**
  * Represents the lifecycle of a single Kafka broker. Handles all functionality required
  * to start up and shutdown a single Kafka node.
+ *
+ * 表示单个Kafka broker的生命周期, 处理启动和关闭单个Kafka节点所需的所有功能
+ *
+ * SocketServer：
+ *    首先开启1个Acceptor线程用于监听默认端口号为9092上的Socket链接，
+ *    然后当有新的Socket链接成功建立时会将对应的SocketChannel以轮询的方式转发给N个Processor线程中的某一个，并由其处理接下来该SocketChannel上的读写请求，其中N=num.network.threads，默认为3。
+ *    当Processor线程监听来自SocketChannel的请求时，会将请求放置在RequestChannel中的请求队列；当Processor线程监听到SocketChannel请求的响应时，会将响应从RequestChannel中的响应队列中取出来并发送给客户端。
+ *
  */
 class KafkaServer(val config: KafkaConfig, time: Time = Time.SYSTEM, threadNamePrefix: Option[String] = None,
                   kafkaMetricsReporters: Seq[KafkaMetricsReporter] = List()) extends Logging with KafkaMetricsGroup {
@@ -135,19 +143,24 @@ class KafkaServer(val config: KafkaConfig, time: Time = Time.SYSTEM, threadNameP
 
   var metrics: Metrics = null
 
+  // broker的状态, 值的变化表示了broker的生命周期
   val brokerState: BrokerState = new BrokerState
 
+  // KafkaApis 业务逻辑实现层
   var dataPlaneRequestProcessor: KafkaApis = null
   var controlPlaneRequestProcessor: KafkaApis = null
 
   var authorizer: Option[Authorizer] = None
+  // 监听Socket请求
   var socketServer: SocketServer = null
   var dataPlaneRequestHandlerPool: KafkaRequestHandlerPool = null
   var controlPlaneRequestHandlerPool: KafkaRequestHandlerPool = null
 
   var logDirFailureChannel: LogDirFailureChannel = null
+  // 日志管理
   var logManager: LogManager = null
 
+  // 分区副本管理
   var replicaManager: ReplicaManager = null
   var adminManager: AdminManager = null
   var tokenManager: DelegationTokenManager = null
@@ -161,8 +174,10 @@ class KafkaServer(val config: KafkaConfig, time: Time = Time.SYSTEM, threadNameP
 
   var transactionCoordinator: TransactionCoordinator = null
 
+  // Kafka集群控制管理
   var kafkaController: KafkaController = null
 
+  // 后台任务调度资源池
   var kafkaScheduler: KafkaScheduler = null
 
   var metadataCache: MetadataCache = null
@@ -189,6 +204,9 @@ class KafkaServer(val config: KafkaConfig, time: Time = Time.SYSTEM, threadNameP
   newGauge("yammer-metrics-count", () => com.yammer.metrics.Metrics.defaultRegistry.allMetrics.size)
 
   /**
+   * 启动api: 启动Kafka server的单个实例
+   * 实例化LogManager(日志管理), SocketServer(监听Socket请求), KafkaRequestHandlers(请求处理器)
+   *
    * Start up API for bringing up a single instance of the Kafka server.
    * Instantiates the LogManager, the SocketServer and the request handlers - KafkaRequestHandlers
    */
@@ -204,6 +222,7 @@ class KafkaServer(val config: KafkaConfig, time: Time = Time.SYSTEM, threadNameP
 
       val canStartup = isStartingUp.compareAndSet(false, true)
       if (canStartup) {
+        // 状态: Starting
         brokerState.newState(Starting)
 
         /* setup zookeeper */
@@ -317,6 +336,7 @@ class KafkaServer(val config: KafkaConfig, time: Time = Time.SYSTEM, threadNameP
         dataPlaneRequestHandlerPool = new KafkaRequestHandlerPool(config.brokerId, socketServer.dataPlaneRequestChannel, dataPlaneRequestProcessor, time,
           config.numIoThreads, s"${SocketServer.DataPlaneMetricPrefix}RequestHandlerAvgIdlePercent", SocketServer.DataPlaneThreadPrefix)
 
+        // controlPlaneRequestProcessor参数里配置了才会创建
         socketServer.controlPlaneRequestChannelOpt.foreach { controlPlaneRequestChannel =>
           controlPlaneRequestProcessor = new KafkaApis(controlPlaneRequestChannel, replicaManager, adminManager, groupCoordinator, transactionCoordinator,
             kafkaController, zkClient, config.brokerId, config, metadataCache, metrics, authorizer, quotaManagers,

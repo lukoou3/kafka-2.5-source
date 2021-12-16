@@ -62,9 +62,21 @@ object Kafka extends Logging {
     props
   }
 
+  /**
+   * 服务端进程的入口
+   */
   def main(args: Array[String]): Unit = {
     try {
+      //加载参数中传入的Properties文件
       val serverProps = getPropsFromArgs(args)
+      /**
+       * KafkaServer的包装, 负责KafkaServer的启动和停止
+       *    kafkaServerStartable.startup()就是调用的 KafkaServer.startup()
+       *    kafkaServerStartable.shutdown()就是调用的 KafkaServer.shutdown()
+       *    kafkaServerStartable.awaitShutdown()就是调用的 KafkaServer.awaitShutdown()
+       *
+       * Broker启动最关键的类:[[kafka.server.KafkaServer]]
+       */
       val kafkaServerStartable = KafkaServerStartable.fromProps(serverProps)
 
       try {
