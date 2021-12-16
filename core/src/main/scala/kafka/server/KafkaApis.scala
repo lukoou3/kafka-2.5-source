@@ -134,8 +134,11 @@ class KafkaApis(val requestChannel: RequestChannel,
     try {
       trace(s"Handling request:${request.requestDesc(true)} from connection ${request.context.connectionId};" +
         s"securityProtocol:${request.context.securityProtocol},principal:${request.context.principal}")
+      // 请求api类型枚举
       request.header.apiKey match {
+        // 生产者发送消息的请求
         case ApiKeys.PRODUCE => handleProduceRequest(request)
+        // 消费者获取消息的请求
         case ApiKeys.FETCH => handleFetchRequest(request)
         case ApiKeys.LIST_OFFSETS => handleListOffsetRequest(request)
         case ApiKeys.METADATA => handleTopicMetadataRequest(request)
