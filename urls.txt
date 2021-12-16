@@ -1,0 +1,28 @@
+
+深入Kafka源码01: 入门、Kafka2.0源码搭建(Gradle配置)
+https://blog.csdn.net/qq_36269641/article/details/109737157
+
+基于IDEA+Gradle构建Kafka源码环境
+https://www.cnblogs.com/iwasjoker/p/13862677.html
+
+聊聊 Kafka：编译 Kafka 源码并搭建源码环境
+https://www.163.com/dy/article/GQVIANTI0552G221.html
+
+kafka 2.8.0 源码环境搭建
+https://zhuanlan.zhihu.com/p/370586076
+
+在IDEA里gradle配置和使用
+https://blog.csdn.net/achenyuan/article/details/80682288
+
+gradle idea
+gradle jar
+
+
+SCALA_HOME
+D:\PROGRA~1\scala-2.12.15
+GRADLE_HOME
+D:\java-apps\gradle-6.6.1
+GRADLE_USER_HOME
+D:\java-apps\gradleRepository
+
+%GRADLE_HOME%\bin
