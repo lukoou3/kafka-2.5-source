@@ -35,6 +35,16 @@ public class Producer extends Thread {
     private int numRecords;
     private final CountDownLatch latch;
 
+    /**
+     * 构建方法，初始化生产者对象
+     * @param topic
+     * @param isAsync
+     * @param transactionalId
+     * @param enableIdempotency
+     * @param numRecords
+     * @param transactionTimeoutMs
+     * @param latch
+     */
     public Producer(final String topic,
                     final Boolean isAsync,
                     final String transactionalId,
@@ -43,18 +53,24 @@ public class Producer extends Thread {
                     final int transactionTimeoutMs,
                     final CountDownLatch latch) {
         Properties props = new Properties();
+        // 指定kafka集群地址
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaProperties.KAFKA_SERVER_URL + ":" + KafkaProperties.KAFKA_SERVER_PORT);
+        // client.id一般不做设置
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "DemoProducer");
+        // 设置序列化的类。数据传输的过程中需要进行序列化，消费者获取数据需要反序列化
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, IntegerSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         if (transactionTimeoutMs > 0) {
             props.put(ProducerConfig.TRANSACTION_TIMEOUT_CONFIG, transactionTimeoutMs);
         }
+        // 事务支持, 一般不会用
         if (transactionalId != null) {
             props.put(ProducerConfig.TRANSACTIONAL_ID_CONFIG, transactionalId);
         }
+        // 生产者幂等性
         props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, enableIdempotency);
 
+        // 初始化KafkaProducer对象
         producer = new KafkaProducer<>(props);
         this.topic = topic;
         this.isAsync = isAsync;
@@ -73,12 +89,15 @@ public class Producer extends Thread {
         while (recordsSent < numRecords) {
             String messageStr = "Message_" + messageKey;
             long startTime = System.currentTimeMillis();
+            // 异步发送
             if (isAsync) { // Send asynchronously
+                // 这样的方式，性能比较好，我们生产代码用的就是这种方式。
                 producer.send(new ProducerRecord<>(topic,
                     messageKey,
                     messageStr), new DemoCallBack(startTime, messageKey, messageStr));
             } else { // Send synchronously
                 try {
+                    //同步发送, 发送一条消息，等这条消息所有的后续工作都完成以后才继续下一条消息的发送。
                     producer.send(new ProducerRecord<>(topic,
                         messageKey,
                         messageStr)).get();
